@@ -13,30 +13,10 @@
 #include "on_connectmesages.h"
 
 
-struct Node {
-   char *datatopics;
-   struct Node *next;
-};
-
-struct Config{
-    char *port;
-    char *address;
-    char *ussername;
-    char *password;
-    char *tsl;
-};
-
-struct Case{
-    char *casetopic;
-    char *casekey;
-    char *casetype;
-    char *casevalue;
-    char *casecomparisontype;
-    struct Case *next;
-};
-
 volatile int interrupt;
 sqlite3 *data_base;
+
+
 
 int main(void)
 {
@@ -47,7 +27,6 @@ int main(void)
     struct mosquitto *mosq;
     struct Node *temporarily;
     struct Node *head = NULL;
-    struct Case *casehead = NULL;
 
 	memset(&action, 0, sizeof(struct sigaction));
     memset(&configdata, 0, sizeof(struct Config));
@@ -58,32 +37,11 @@ int main(void)
 
     //log opening
     openlog("mqttapp", LOG_PID, LOG_USER);
-
-    rc = uci_read_config_data(&head, &configdata, &casehead); 
+    rc = uci_read_config_data(&head, &configdata); 
     if(rc == -1){
         goto logclose;
     }
-    //tikrinu ar veikia
-    /*
-    struct Node *ptr = head;
-    while(ptr->datatopics != NULL) 
-        {
-            printf("%s:\n", ptr->datatopics);
-            ptr = ptr->next;
-        }
-    */
-    
-    struct Case *ptre = casehead;
-    while(ptre != NULL) 
-        {
-            printf("Case topic: %s\n", ptre->casetopic);
-            printf("Case key: %s\n", ptre->casekey);
-            printf("Case type: %s\n", ptre->casetype);
-            printf("Case value: %s\n", ptre->casevalue);
-            printf("Case comparison type: %s\n", ptre->casecomparisontype);
-            ptre = ptre->next;
-        }
-    
+
     rc = database_and_initialize_mosquitto();
     if (rc == -1){
         goto dataBaseNotCreated;
@@ -112,6 +70,7 @@ int main(void)
     printf("Working\n");
     //Program won't shut down while interupt = 1
 	while(!interrupt) {   
+        
 	}
 
     mosquitto_loop_stop(mosq, true);
@@ -127,16 +86,6 @@ int main(void)
         free(head->datatopics);                
         temporarily= head;
         head = head->next;
-        free (temporarily);
-    }
-    while(casehead != NULL) { 
-        free(casehead->casetopic);    
-        free(casehead->casekey);
-        free(casehead->casetype);  
-        free(casehead->casevalue);
-        free(casehead->casecomparisontype);  
-        temporarily= casehead;
-        casehead = casehead->next;
         free (temporarily);
     }
     //free memory
